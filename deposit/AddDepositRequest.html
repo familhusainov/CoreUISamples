@@ -2,11 +2,235 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>About</title>
+    <title>Add Deposit / Payment Requests</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f5f7;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            margin-bottom: 15px;
+        }
+
+        .card {
+            background: #ffffff;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            width: 140px;
+            font-weight: bold;
+        }
+
+        .form-group input,
+        .form-group select {
+            flex: 1;
+            padding: 7px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        /* 🔍 Searchable select */
+        .searchable-select {
+            position: relative;
+            flex: 1;
+        }
+
+        .searchable-select input {
+            width: 100%;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-top: none;
+            max-height: 180px;
+            overflow-y: auto;
+            display: none;
+            z-index: 100;
+        }
+
+        .dropdown div {
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+
+        .dropdown div:hover {
+            background-color: #f1f1f1;
+        }
+
+        .btn {
+            background-color: #0d6efd;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background-color: #0b5ed7;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+
+        table th {
+            background-color: #f8f9fa;
+        }
+
+        .status-pending {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-approved {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <h1>About Page</h1>
 
-    <a href="index.html">Back to Home</a>
+<h2>Add Deposit / Payment Requests</h2>
+
+<div class="card">
+    <h3>Create New Deposit</h3>
+
+    <!-- ✅ Account searchable -->
+    <div class="form-group">
+        <label>Account:</label>
+        <div class="searchable-select">
+            <input type="text" id="accountInput" placeholder="Select Account" readonly>
+            <div class="dropdown" id="accountDropdown">
+                <div onclick="selectAccount(this)">ALPACA - Orxan Abdullazadə - 00001/1</div>
+                <div onclick="selectAccount(this)">EXANTE - Elvin Məmmədov - 00002/3</div>
+                <div onclick="selectAccount(this)">IBKR - Rəşad Əliyev - 00003/2</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>Payment Type:</label>
+        <select>
+            <option>Default - BankTransfer</option>
+            <option>BankTransfer</option>
+            <option>Cash</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Bank Account:</label>
+        <select>
+            <option>Select Bank Account</option>
+            <option>Bank A - 123456 (AZN)</option>
+            <option>Bank B - 987654 (USD)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Amount:</label>
+        <input type="number" placeholder="Enter amount">
+    </div>
+
+    <button class="btn">Add Deposit</button>
+</div>
+
+<div class="card">
+    <h3>Payment Requests</h3>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Account</th>
+            <th>Bank Account</th>
+            <th>Payment Type</th>
+            <th>Currency</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Created At</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <td>ALPACA - Orxan Abdullazadə</td>
+            <td>Bank A - 123456</td>
+            <td>Cash</td>
+            <td>USD</td>
+            <td>1000.00</td>
+            <td class="status-pending">Pending</td>
+            <td>29.12.2025</td>
+        </tr>
+        <tr>
+            <td>EXANTE - Elvin Məmmədov</td>
+            <td>Bank B - 987654</td>
+            <td>Bank Transfer</td>
+            <td>USD</td>
+            <td>500.00</td>
+            <td class="status-approved">Approved</td>
+            <td>28.12.2025</td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    const input = document.getElementById("accountInput");
+    const dropdown = document.getElementById("accountDropdown");
+
+    input.addEventListener("click", () => {
+        dropdown.style.display = "block";
+        input.removeAttribute("readonly");
+        input.focus();
+    });
+
+    input.addEventListener("keyup", () => {
+        const value = input.value.toLowerCase();
+        dropdown.querySelectorAll("div").forEach(d => {
+            d.style.display = d.innerText.toLowerCase().includes(value) ? "block" : "none";
+        });
+    });
+
+    function selectAccount(el) {
+        input.value = el.innerText;
+        dropdown.style.display = "none";
+        input.setAttribute("readonly", true);
+    }
+
+    document.addEventListener("click", e => {
+        if (!e.target.closest(".searchable-select")) {
+            dropdown.style.display = "none";
+            input.setAttribute("readonly", true);
+        }
+    });
+</script>
+
 </body>
 </html>
