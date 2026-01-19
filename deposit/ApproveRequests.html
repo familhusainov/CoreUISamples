@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TopUp Requests</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    padding: 20px;
+}
+
+.card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+}
+
+h2 {
+    margin-bottom: 15px;
+}
+
+.filters {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+    align-items: center;
+}
+
+.filters label {
+    font-weight: bold;
+}
+
+.filters input, .filters select {
+    padding: 6px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+    text-align: left;
+}
+
+th {
+    background: #f0f2f4;
+}
+
+.status {
+    font-weight: bold;
+}
+
+.Pending { color: orange; }
+.Approved { color: green; }
+.Rejected { color: red; }
+
+button {
+    padding: 6px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: none;
+}
+
+.btn-view { background: #007bff; color: #fff; }
+.btn-approve { background: #28a745; color: #fff; }
+.btn-reject { background: #dc3545; color: #fff; }
+.btn-close { background: #6c757d; color: #fff; }
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background: #fff;
+    width: 520px;
+    margin: 80px auto;
+    padding: 20px;
+    border-radius: 6px;
+}
+
+.form-group {
+    margin-bottom: 10px;
+}
+
+.form-group label {
+    font-weight: bold;
+    display: block;
+}
+
+.form-group input, textarea {
+    width: 100%;
+    padding: 6px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="card">
+    <h2>TopUp Requests</h2>
+
+    <!-- Filters -->
+    <div class="filters">
+        <label>Status:</label>
+        <select id="statusFilter">
+            <option value="All">All</option>
+            <option value="Pending" selected>Pending</option>
+            <option value="Approved">Approved</option>
+            <option value="Rejected">Rejected</option>
+        </select>
+
+        <div id="dateFilters" style="display:none">
+            <label>From:</label>
+            <input type="date">
+            <label>To:</label>
+            <input type="date">
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Account</th>
+                <th>Bank Account</th>
+                <th>Request Amount</th>
+                <th>Request Date</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <h3>TopUp Request Details</h3>
+
+        <div class="form-group">
+            <label>Account</label>
+            <input readonly id="mAccount">
+        </div>
+
+        <div class="form-group">
+            <label>Bank Account</label>
+            <input readonly id="mBank">
+        </div>
+
+        <div class="form-group">
+            <label>Currency</label>
+            <input readonly id="mCurrency">
+        </div>
+
+        <div class="form-group">
+            <label>Request Amount</label>
+            <input readonly id="mRequestAmount">
+        </div>
+
+        <div class="form-group">
+            <label>Date</label>
+            <input type="datetime-local" id="mDate">
+        </div>
+
+        <div class="form-group">
+            <label>TopUp Amount</label>
+            <input type="number" id="mTopupAmount">
+        </div>
+
+        <div class="form-group">
+            <label>Description</label>
+            <textarea id="mDescription"></textarea>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-close" onclick="closeModal()">Close</button>
+            <button class="btn-reject" onclick="reject()">Reject</button>
+            <button class="btn-approve" onclick="approve()">Approve</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let data = [
+{
+    id: 1,
+    account: "AlPaca-Orxan Abdullazadə-00001/1",
+    bank: "Kapital Bank",
+    currency: "AZN",
+    requestAmount: 1000,
+    requestDate: "2026-01-18 11:30",
+    description: "Bank köçürməsi",
+    status: "Pending"
+},
+{
+    id: 2,
+    account: "AlPaca-Nicat-00002/1",
+    bank: "ABB",
+    currency: "USD",
+    requestAmount: 500,
+    requestDate: "2026-01-17 15:10",
+    description: "Manual təsdiq",
+    status: "Approved"
+},
+{
+    id: 3,
+    account: "AlPaca-Ilkin-00003/1",
+    bank: "PASHA",
+    currency: "AZN",
+    requestAmount: 750,
+    requestDate: "2026-01-16 10:00",
+    description: "Uyğunsuz sənəd",
+    status: "Rejected"
+}
+];
+
+let selected = null;
+
+function render() {
+    const status = document.getElementById("statusFilter").value;
+    const body = document.getElementById("tableBody");
+    body.innerHTML = "";
+
+    data
+        .filter(x => status === "All" || x.status === status)
+        .forEach(x => {
+            body.innerHTML += `
+            <tr>
+                <td>${x.id}</td>
+                <td>${x.account}</td>
+                <td>${x.bank}</td>
+                <td>${x.requestAmount}</td>
+                <td>${x.requestDate}</td>
+                <td>${x.description || "-"}</td>
+                <td class="status ${x.status}">${x.status}</td>
+                <td>
+                    ${x.status === "Pending"
+                        ? `<button class="btn-view" onclick="openModal(${x.id})">View</button>`
+                        : "-"}
+                </td>
+            </tr>`;
+        });
+}
+
+document.getElementById("statusFilter").addEventListener("change", e => {
+    document.getElementById("dateFilters").style.display =
+        e.target.value === "Pending" ? "none" : "block";
+    render();
+});
+
+function openModal(id) {
+    selected = data.find(x => x.id === id);
+    document.getElementById("modal").style.display = "block";
+
+    mAccount.value = selected.account;
+    mBank.value = selected.bank;
+    mCurrency.value = selected.currency;
+    mRequestAmount.value = selected.requestAmount;
+    mDate.value = new Date().toISOString().slice(0,16);
+    mTopupAmount.value = "";
+    mDescription.value = "";
+}
+
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+}
+
+function approve() {
+    selected.status = "Approved";
+    closeModal();
+    render();
+}
+
+function reject() {
+    selected.status = "Rejected";
+    closeModal();
+    render();
+}
+
+render();
+</script>
+
+</body>
+</html>
